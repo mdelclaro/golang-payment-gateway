@@ -13,6 +13,7 @@ import (
 	"example.com/payment-gateway/internal/bank"
 	"example.com/payment-gateway/internal/config"
 	"example.com/payment-gateway/internal/httpapi"
+	"example.com/payment-gateway/internal/migrations"
 	"example.com/payment-gateway/internal/repository/postgres"
 )
 
@@ -29,7 +30,7 @@ func Run() error {
 	if err := db.PingContext(ctx); err != nil {
 		return err
 	}
-	if err := postgres.Migrate(ctx, db); err != nil {
+	if err := migrations.Migrate(ctx, db); err != nil {
 		return err
 	}
 

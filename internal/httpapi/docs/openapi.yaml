@@ -1,0 +1,280 @@
+openapi: 3.0.3
+info:
+  title: Payment Gateway API
+  version: 1.0.0
+  description: |
+    API for creating, authorizing, and retrieving card payments.
+
+    Payment endpoints use the `/v1` URL prefix. Breaking changes will be
+    introduced under a new major prefix such as `/v2`; compatible additions
+    remain in the current version. The operational health check stays at
+    `/health` and is not versioned.
+
+    To run locally, start PostgreSQL and the bank API, then run
+    `go run ./cmd/payment-gateway`. Configure the listener with `HTTP_ADDR`
+    (default `:8090`), the bank endpoint with `BANK_API_URL` (default
+    `http://localhost:8080`), and the database connection with `DATABASE_URL`
+    (default `postgres://payment:payment@localhost:5432/payment?sslmode=disable`).
+    The service creates its payment table on startup. `docker compose up --build`
+    starts the gateway and PostgreSQL; the bank API must still be reachable at
+    the address configured by `BANK_API_URL`.
+  contact:
+    name: API Support
+servers:
+  - url: http://localhost:8090
+    description: Local development server
+tags:
+  - name: Payments
+    description: Version 1 payment operations
+  - name: Operations
+    description: Operational endpoints
+paths:
+  /health:
+    get:
+      tags: [Operations]
+      operationId: getHealth
+      summary: Check service health
+      responses:
+        '200':
+          description: The service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    example: ok
+  /v1/payments:
+    post:
+      tags: [Payments]
+      operationId: createPayment
+      summary: Create and authorize a payment
+      description: Card number and CVV are used for authorization and are not returned or stored in the payment record.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentRequest'
+            example:
+              cardNumber: '4111111111111111'
+              expiryMonth: 12
+              expiryYear: 2030
+              currency: USD
+              amount: 2500
+              cvv: '123'
+      responses:
+        '201':
+          description: Payment was created. Its status contains the bank authorization result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+              examples:
+                authorized:
+                  summary: Payment authorized
+                  value:
+                    id: 42
+                    status: Authorized
+                    cardLastFour: '1111'
+                    expiryMonth: 12
+                    expiryYear: 2030
+                    currency: USD
+                    amount: 2500
+                    authorizationCode: auth_123
+                declined:
+                  summary: Payment declined
+                  value:
+                    id: 43
+                    status: Declined
+                    cardLastFour: '0002'
+                    expiryMonth: 12
+                    expiryYear: 2030
+                    currency: USD
+                    amount: 2500
+        '400':
+          description: Request fields are invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: invalid payment request
+        '500':
+          description: Payment could not be processed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: payment could not be processed
+        '503':
+          description: Payment authorization is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: payment authorization is unavailable
+  /v1/payments/{id}:
+    get:
+      tags: [Payments]
+      operationId: getPayment
+      summary: Retrieve a payment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Positive database-generated payment ID.
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      responses:
+        '200':
+          description: Payment details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+              examples:
+                authorized:
+                  summary: Previously authorized payment
+                  value:
+                    id: 42
+                    status: Authorized
+                    cardLastFour: '1111'
+                    expiryMonth: 12
+                    expiryYear: 2030
+                    currency: USD
+                    amount: 2500
+                    authorizationCode: auth_123
+                declined:
+                  summary: Previously declined payment
+                  value:
+                    id: 43
+                    status: Declined
+                    cardLastFour: '0002'
+                    expiryMonth: 12
+                    expiryYear: 2030
+                    currency: USD
+                    amount: 2500
+        '400':
+          description: Payment ID is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: invalid payment ID
+        '404':
+          description: No payment exists with this ID.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: payment not found
+        '500':
+          description: Payment could not be retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: payment could not be retrieved
+components:
+  schemas:
+    CreatePaymentRequest:
+      type: object
+      required:
+        - cardNumber
+        - expiryMonth
+        - expiryYear
+        - currency
+        - amount
+        - cvv
+      properties:
+        cardNumber:
+          type: string
+          minLength: 14
+          maxLength: 19
+          pattern: '^[0-9]{14,19}$'
+          description: Card number containing 14 to 19 digits.
+          example: '4111111111111111'
+        expiryMonth:
+          type: integer
+          minimum: 1
+          maximum: 12
+          example: 12
+        expiryYear:
+          type: integer
+          minimum: 1
+          description: Must be in the future when combined with expiryMonth.
+          example: 2030
+        currency:
+          type: string
+          enum: [GBP, EUR, USD]
+          example: USD
+        amount:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Amount in the currency's minor units.
+          example: 2500
+        cvv:
+          type: string
+          minLength: 3
+          maxLength: 4
+          pattern: '^[0-9]{3,4}$'
+          example: '123'
+    Payment:
+      type: object
+      required:
+        - id
+        - status
+        - cardLastFour
+        - expiryMonth
+        - expiryYear
+        - currency
+        - amount
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 42
+        status:
+          type: string
+          enum: [Authorized, Declined]
+          example: Authorized
+        cardLastFour:
+          type: string
+          pattern: '^[0-9]{4}$'
+          example: '1111'
+        expiryMonth:
+          type: integer
+          example: 12
+        expiryYear:
+          type: integer
+          example: 2030
+        currency:
+          type: string
+          enum: [GBP, EUR, USD]
+          example: USD
+        amount:
+          type: integer
+          format: int64
+          example: 2500
+        authorizationCode:
+          type: string
+          description: Present when supplied by the bank.
+          example: auth_123
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          example: invalid payment request
