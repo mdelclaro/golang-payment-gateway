@@ -32,6 +32,12 @@ func (h createPaymentHandler) Create(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, errorResponse{Error: "invalid payment request"})
 			return
 		}
+
+		if errors.Is(err, applicationpayment.ErrBankUnavailable) {
+			c.JSON(http.StatusServiceUnavailable, errorResponse{Error: "payment authorization is unavailable"})
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, errorResponse{Error: "payment could not be processed"})
 		return
 	}

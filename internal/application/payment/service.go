@@ -31,6 +31,11 @@ func (s *service) CreatePayment(ctx context.Context, input CreatePaymentInput) (
 		return domain.Payment{}, ErrInvalidPayment
 	}
 
+	cardLastFour, err := validateExpiryAndGetLastFour(input.CardNumber, input.ExpiryMonth, input.ExpiryYear)
+	if err != nil {
+		return domain.Payment{}, err
+	}
+
 	result, err := s.authorizer.Authorize(ctx, AuthorizationRequest{
 		CardNumber:  input.CardNumber,
 		ExpiryMonth: input.ExpiryMonth,
@@ -42,8 +47,6 @@ func (s *service) CreatePayment(ctx context.Context, input CreatePaymentInput) (
 	if err != nil {
 		return domain.Payment{}, err
 	}
-
-	cardLastFour := input.CardNumber[len(input.CardNumber)-4:]
 
 	status := domain.PaymentDeclined
 	if result.Authorized {

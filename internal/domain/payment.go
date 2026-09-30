@@ -3,8 +3,8 @@ package domain
 type PaymentStatus string
 
 const (
-	PaymentAuthorized PaymentStatus = "AUTHORIZED"
-	PaymentDeclined   PaymentStatus = "DECLINED"
+	PaymentAuthorized PaymentStatus = "Authorized"
+	PaymentDeclined   PaymentStatus = "Declined"
 )
 
 type Payment struct {

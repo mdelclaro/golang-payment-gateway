@@ -43,17 +43,22 @@ func TestCreatePaymentReturnsSanitizedPayment(t *testing.T) {
 	request.Header.Set("Content-Type", "application/json")
 	response := httptest.NewRecorder()
 
-	NewRouterWithPayments(service).ServeHTTP(response, request)
+	NewRouter(service).ServeHTTP(response, request)
 
 	if response.Code != http.StatusCreated {
 		t.Fatalf("status = %d, want %d; body: %s", response.Code, http.StatusCreated, response.Body.String())
 	}
+
 	var body map[string]any
 	if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
 		t.Fatalf("decode response: %v", err)
 	}
+
 	if body["id"] != float64(42) || body["cardLastFour"] != "1111" {
 		t.Errorf("response = %v, expected generated ID and card last four", body)
+	}
+	if body["status"] != string(domain.PaymentAuthorized) {
+		t.Errorf("response status = %v, want %q", body["status"], domain.PaymentAuthorized)
 	}
 	if _, exists := body["card_number"]; exists {
 		t.Error("response included card number")
@@ -72,7 +77,7 @@ func TestCreatePaymentRejectsMalformedRequest(t *testing.T) {
 	request.Header.Set("Content-Type", "application/json")
 	response := httptest.NewRecorder()
 
-	NewRouterWithPayments(service).ServeHTTP(response, request)
+	NewRouter(service).ServeHTTP(response, request)
 
 	if response.Code != http.StatusBadRequest {
 		t.Errorf("status = %d, want %d", response.Code, http.StatusBadRequest)
@@ -89,6 +94,7 @@ func TestCreatePaymentMapsServiceErrors(t *testing.T) {
 		want int
 	}{
 		{name: "invalid payment", err: applicationpayment.ErrInvalidPayment, want: http.StatusBadRequest},
+		{name: "bank unavailable", err: applicationpayment.ErrBankUnavailable, want: http.StatusServiceUnavailable},
 		{name: "processing failure", err: errors.New("database details"), want: http.StatusInternalServerError},
 	}
 	for _, tt := range tests {
@@ -98,7 +104,7 @@ func TestCreatePaymentMapsServiceErrors(t *testing.T) {
 			request.Header.Set("Content-Type", "application/json")
 			response := httptest.NewRecorder()
 
-			NewRouterWithPayments(service).ServeHTTP(response, request)
+			NewRouter(service).ServeHTTP(response, request)
 
 			if response.Code != tt.want {
 				t.Errorf("status = %d, want %d", response.Code, tt.want)
