@@ -1,0 +1,18 @@
+# Go build and test outputs
+/bin/
+/dist/
+/payment-gateway
+*.test
+*.out
+coverage.*
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Editor and operating system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
