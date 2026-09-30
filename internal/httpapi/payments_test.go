@@ -45,7 +45,7 @@ func TestCreatePaymentReturnsSanitizedPayment(t *testing.T) {
 		Amount:       2500,
 	}}
 	requestBody := `{"cardNumber":"4111111111111111","expiryMonth":12,"expiryYear":2030,"currency":"USD","amount":2500,"cvv":"123"}`
-	request := httptest.NewRequest(http.MethodPost, "/payments", strings.NewReader(requestBody))
+	request := httptest.NewRequest(http.MethodPost, "/v1/payments", strings.NewReader(requestBody))
 	request.Header.Set("Content-Type", "application/json")
 	response := httptest.NewRecorder()
 
@@ -79,7 +79,7 @@ func TestCreatePaymentReturnsSanitizedPayment(t *testing.T) {
 
 func TestCreatePaymentRejectsMalformedRequest(t *testing.T) {
 	service := &paymentServiceStub{}
-	request := httptest.NewRequest(http.MethodPost, "/payments", strings.NewReader(`{"cardNumber":"123","cvv":"1"}`))
+	request := httptest.NewRequest(http.MethodPost, "/v1/payments", strings.NewReader(`{"cardNumber":"123","cvv":"1"}`))
 	request.Header.Set("Content-Type", "application/json")
 	response := httptest.NewRecorder()
 
@@ -106,7 +106,7 @@ func TestCreatePaymentMapsServiceErrors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			service := &paymentServiceStub{err: tt.err}
-			request := httptest.NewRequest(http.MethodPost, "/payments", strings.NewReader(`{"cardNumber":"4111111111111111","expiryMonth":12,"expiryYear":2030,"currency":"USD","amount":2500,"cvv":"123"}`))
+			request := httptest.NewRequest(http.MethodPost, "/v1/payments", strings.NewReader(`{"cardNumber":"4111111111111111","expiryMonth":12,"expiryYear":2030,"currency":"USD","amount":2500,"cvv":"123"}`))
 			request.Header.Set("Content-Type", "application/json")
 			response := httptest.NewRecorder()
 
@@ -133,7 +133,7 @@ func TestGetPaymentReturnsSanitizedPayment(t *testing.T) {
 		Amount:            2500,
 		AuthorizationCode: "auth-123",
 	}}
-	request := httptest.NewRequest(http.MethodGet, "/payments/42", nil)
+	request := httptest.NewRequest(http.MethodGet, "/v1/payments/42", nil)
 	response := httptest.NewRecorder()
 
 	NewRouter(service).ServeHTTP(response, request)
@@ -164,7 +164,7 @@ func TestGetPaymentRejectsInvalidID(t *testing.T) {
 	for _, id := range []string{"abc", "0", "-42", "9223372036854775808"} {
 		t.Run(id, func(t *testing.T) {
 			service := &paymentServiceStub{}
-			request := httptest.NewRequest(http.MethodGet, "/payments/"+id, nil)
+			request := httptest.NewRequest(http.MethodGet, "/v1/payments/"+id, nil)
 			response := httptest.NewRecorder()
 
 			NewRouter(service).ServeHTTP(response, request)
@@ -191,7 +191,7 @@ func TestGetPaymentMapsServiceErrors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			service := &paymentServiceStub{getErr: tt.err}
-			request := httptest.NewRequest(http.MethodGet, "/payments/42", nil)
+			request := httptest.NewRequest(http.MethodGet, "/v1/payments/42", nil)
 			response := httptest.NewRecorder()
 
 			NewRouter(service).ServeHTTP(response, request)
