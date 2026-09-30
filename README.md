@@ -37,6 +37,8 @@ The API listens on `:8090` by default. Set `HTTP_ADDR` to change the address. It
 
 `amount` is a positive integer in the currency's minor units (for example, USD 10.50 is `1050`). Supported currencies are GBP, EUR, and USD. Card numbers must contain 14–19 digits, expiry must be in the future, and CVV must contain 3–4 digits. A successful request returns `201 Created` with the generated payment ID and authorization result. The response includes `cardLastFour`; it never includes the full card number or CVV. Invalid requests return `400 Bad Request`; processing failures return `500 Internal Server Error`.
 
+`GET /payments/{id}` retrieves a previously created payment. It returns `200 OK` with the same payment details, `400 Bad Request` for an invalid ID, or `404 Not Found` when no payment has that ID.
+
 ## Structure
 
 - `cmd/payment-gateway` is the process entry point.
