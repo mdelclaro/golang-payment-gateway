@@ -7,19 +7,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NewRouter() http.Handler {
-	return NewRouterWithPayments(nil)
-}
-
-func NewRouterWithPayments(paymentService payment.Service) http.Handler {
+func NewRouter(paymentService payment.Service) http.Handler {
 	router := gin.New()
 
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
-	if paymentService != nil {
-		router.POST("/payments", createPaymentHandler{service: paymentService}.Create)
-	}
+	router.POST("/payments", createPaymentHandler{service: paymentService}.Create)
 
 	return router
 }

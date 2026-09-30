@@ -1,10 +1,10 @@
 package httpapi
 
 type createPaymentRequest struct {
-	CardNumber  string `json:"cardNumber" binding:"required,numeric,min=12,max=19"`
+	CardNumber  string `json:"cardNumber" binding:"required,numeric,min=14,max=19"`
 	ExpiryMonth int    `json:"expiryMonth" binding:"gte=1,lte=12"`
 	ExpiryYear  int    `json:"expiryYear" binding:"gte=1"`
-	Currency    string `json:"currency" binding:"required"`
+	Currency    string `json:"currency" binding:"oneof=GBP EUR USD"`
 	Amount      int64  `json:"amount" binding:"gt=0"`
 	CVV         string `json:"cvv" binding:"required,numeric,min=3,max=4"`
 }

@@ -108,13 +108,15 @@ func TestCreatePaymentRejectsInvalidInputBeforeCallingDependencies(t *testing.T)
 		mutate func(*CreatePaymentInput)
 	}{
 		{name: "non-numeric card number", mutate: func(input *CreatePaymentInput) { input.CardNumber = "4111abcd11111111" }},
-		{name: "card number too short", mutate: func(input *CreatePaymentInput) { input.CardNumber = "4111" }},
+		{name: "card number too short", mutate: func(input *CreatePaymentInput) { input.CardNumber = "4111111111111" }},
 		{name: "month below range", mutate: func(input *CreatePaymentInput) { input.ExpiryMonth = 0 }},
 		{name: "month above range", mutate: func(input *CreatePaymentInput) { input.ExpiryMonth = 13 }},
 		{name: "year is zero", mutate: func(input *CreatePaymentInput) { input.ExpiryYear = 0 }},
-		{name: "currency missing", mutate: func(input *CreatePaymentInput) { input.Currency = "" }},
+		{name: "unsupported currency", mutate: func(input *CreatePaymentInput) { input.Currency = "JPY" }},
 		{name: "amount is zero", mutate: func(input *CreatePaymentInput) { input.Amount = 0 }},
 		{name: "CVV missing", mutate: func(input *CreatePaymentInput) { input.CVV = "" }},
+		{name: "CVV is not numeric", mutate: func(input *CreatePaymentInput) { input.CVV = "abc" }},
+		{name: "card expired", mutate: func(input *CreatePaymentInput) { input.ExpiryMonth, input.ExpiryYear = 1, 2000 }},
 	}
 
 	for _, tt := range tests {
