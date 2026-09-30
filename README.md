@@ -69,6 +69,7 @@ The [OpenAPI (Swagger) specification](internal/httpapi/docs/openapi.yaml) docume
 - `internal/domain` contains payment concepts and business rules.
 - `internal/application` contains use cases and the interfaces they need.
 - `internal/httpapi` translates between HTTP and application behavior.
+- `internal/migrations` embeds and applies database schema migrations at startup.
 - `internal/repository/postgres` stores payment records in PostgreSQL and uses database-generated IDs.
 
 Card number and CVV are authorization inputs only; payment records contain the last four digits, never the full card number or CVV.
