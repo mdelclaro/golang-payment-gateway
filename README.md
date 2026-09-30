@@ -10,6 +10,23 @@ go run ./cmd/payment-gateway
 
 The API listens on `:8090` by default. Set `HTTP_ADDR` to change the address.
 
+## Payments API
+
+`POST /payments` creates and authorizes a payment. The request uses camelCase JSON fields:
+
+```json
+{
+  "cardNumber": "4111111111111111",
+  "expiryMonth": 12,
+  "expiryYear": 2030,
+  "currency": "USD",
+  "amount": 2500,
+  "cvv": "123"
+}
+```
+
+`amount` is a positive integer. A successful request returns `201 Created` with the generated payment ID and authorization result. The response includes `cardLastFour`; it never includes the full card number or CVV. Invalid requests return `400 Bad Request`; processing failures return `500 Internal Server Error`.
+
 ## Structure
 
 - `cmd/payment-gateway` is the process entry point.
