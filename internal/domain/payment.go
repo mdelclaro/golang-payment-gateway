@@ -1,0 +1,19 @@
+package domain
+
+type PaymentStatus string
+
+const (
+	PaymentAuthorized PaymentStatus = "AUTHORIZED"
+	PaymentDeclined   PaymentStatus = "DECLINED"
+)
+
+type Payment struct {
+	ID                string
+	Status            PaymentStatus
+	CardLastFour      string
+	ExpiryMonth       int
+	ExpiryYear        int
+	Currency          string
+	Amount            int64
+	AuthorizationCode string
+}
