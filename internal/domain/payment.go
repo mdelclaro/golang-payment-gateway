@@ -8,7 +8,7 @@ const (
 )
 
 type Payment struct {
-	ID                string
+	ID                int64
 	Status            PaymentStatus
 	CardLastFour      string
 	ExpiryMonth       int
