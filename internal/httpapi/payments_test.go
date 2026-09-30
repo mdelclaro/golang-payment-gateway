@@ -14,9 +14,13 @@ import (
 )
 
 type paymentServiceStub struct {
-	input   applicationpayment.CreatePaymentInput
-	created domain.Payment
-	err     error
+	input      applicationpayment.CreatePaymentInput
+	created    domain.Payment
+	err        error
+	getID      int64
+	getPayment domain.Payment
+	getErr     error
+	getCalled  bool
 }
 
 func (s *paymentServiceStub) CreatePayment(_ context.Context, input applicationpayment.CreatePaymentInput) (domain.Payment, error) {
@@ -24,8 +28,10 @@ func (s *paymentServiceStub) CreatePayment(_ context.Context, input applicationp
 	return s.created, s.err
 }
 
-func (*paymentServiceStub) GetPayment(context.Context, int64) (domain.Payment, error) {
-	return domain.Payment{}, nil
+func (s *paymentServiceStub) GetPayment(_ context.Context, id int64) (domain.Payment, error) {
+	s.getCalled = true
+	s.getID = id
+	return s.getPayment, s.getErr
 }
 
 func TestCreatePaymentReturnsSanitizedPayment(t *testing.T) {
@@ -102,6 +108,90 @@ func TestCreatePaymentMapsServiceErrors(t *testing.T) {
 			service := &paymentServiceStub{err: tt.err}
 			request := httptest.NewRequest(http.MethodPost, "/payments", strings.NewReader(`{"cardNumber":"4111111111111111","expiryMonth":12,"expiryYear":2030,"currency":"USD","amount":2500,"cvv":"123"}`))
 			request.Header.Set("Content-Type", "application/json")
+			response := httptest.NewRecorder()
+
+			NewRouter(service).ServeHTTP(response, request)
+
+			if response.Code != tt.want {
+				t.Errorf("status = %d, want %d", response.Code, tt.want)
+			}
+			if strings.Contains(response.Body.String(), "database details") {
+				t.Error("response exposed internal error details")
+			}
+		})
+	}
+}
+
+func TestGetPaymentReturnsSanitizedPayment(t *testing.T) {
+	service := &paymentServiceStub{getPayment: domain.Payment{
+		ID:                42,
+		Status:            domain.PaymentAuthorized,
+		CardLastFour:      "1111",
+		ExpiryMonth:       12,
+		ExpiryYear:        2030,
+		Currency:          "USD",
+		Amount:            2500,
+		AuthorizationCode: "auth-123",
+	}}
+	request := httptest.NewRequest(http.MethodGet, "/payments/42", nil)
+	response := httptest.NewRecorder()
+
+	NewRouter(service).ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body: %s", response.Code, http.StatusOK, response.Body.String())
+	}
+	if !service.getCalled || service.getID != 42 {
+		t.Errorf("GetPayment() called with ID %d, want 42", service.getID)
+	}
+
+	var body map[string]any
+	if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if body["id"] != float64(42) || body["status"] != string(domain.PaymentAuthorized) || body["cardLastFour"] != "1111" {
+		t.Errorf("response = %v, want payment details", body)
+	}
+	if _, exists := body["cardNumber"]; exists {
+		t.Error("response included card number")
+	}
+	if _, exists := body["cvv"]; exists {
+		t.Error("response included CVV")
+	}
+}
+
+func TestGetPaymentRejectsInvalidID(t *testing.T) {
+	for _, id := range []string{"abc", "0", "-42", "9223372036854775808"} {
+		t.Run(id, func(t *testing.T) {
+			service := &paymentServiceStub{}
+			request := httptest.NewRequest(http.MethodGet, "/payments/"+id, nil)
+			response := httptest.NewRecorder()
+
+			NewRouter(service).ServeHTTP(response, request)
+
+			if response.Code != http.StatusBadRequest {
+				t.Errorf("status = %d, want %d", response.Code, http.StatusBadRequest)
+			}
+			if service.getCalled {
+				t.Error("service was called with an invalid payment ID")
+			}
+		})
+	}
+}
+
+func TestGetPaymentMapsServiceErrors(t *testing.T) {
+	tests := []struct {
+		name string
+		err  error
+		want int
+	}{
+		{name: "not found", err: applicationpayment.ErrPaymentNotFound, want: http.StatusNotFound},
+		{name: "retrieval failure", err: errors.New("database details"), want: http.StatusInternalServerError},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			service := &paymentServiceStub{getErr: tt.err}
+			request := httptest.NewRequest(http.MethodGet, "/payments/42", nil)
 			response := httptest.NewRecorder()
 
 			NewRouter(service).ServeHTTP(response, request)

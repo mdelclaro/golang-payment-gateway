@@ -13,7 +13,10 @@ func NewRouter(paymentService payment.Service) http.Handler {
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
-	router.POST("/payments", createPaymentHandler{service: paymentService}.Create)
+
+	payments := paymentHandler{service: paymentService}
+	router.POST("/payments", payments.Create)
+	router.GET("/payments/:id", payments.Get)
 
 	return router
 }
