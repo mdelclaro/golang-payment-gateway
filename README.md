@@ -2,7 +2,17 @@
 
 Go implementation of the Checkout.com payment gateway assessment.
 
-## Run
+## Run with Docker Compose
+
+Start the gateway and PostgreSQL:
+
+```powershell
+docker compose up --build
+```
+
+The gateway listens on `http://localhost:8090`, and PostgreSQL data is kept in the `payment_data` volume. The bank API must be running on the host at port `8080`; Compose routes the gateway to it through `host.docker.internal`. Set `BANK_API_URL` in `docker-compose.yml` if it uses another address.
+
+## Run locally
 
 ```powershell
 go run ./cmd/payment-gateway
