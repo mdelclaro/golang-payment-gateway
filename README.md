@@ -34,6 +34,8 @@ Swagger UI is available at <http://localhost:8090/swagger/index.html>. The OpenA
 
 The Makefile provides shortcuts for common tasks. Run `make` or `make help` to list them. GNU Make, Go, and Docker Compose are required for the corresponding targets.
 
+Windows does not include GNU Make by default. If `make` is unavailable, run the underlying commands directly, such as `go test ./...`, `go build ./...`, `go run ./cmd/payment-gateway`, and `docker compose up --build`.
+
 | Command | Action |
 | --- | --- |
 | `make fmt` | Format Go files with `gofmt -w .` |
