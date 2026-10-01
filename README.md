@@ -7,7 +7,7 @@ Go implementation of the Checkout.com payment gateway assessment.
 Start the gateway and PostgreSQL:
 
 ```powershell
-docker compose up --build
+make compose-up
 ```
 
 The gateway listens on `http://localhost:8090`, and PostgreSQL data is kept in the `payment_data` volume. The bank API must be running on the host at port `8080`; Compose routes the gateway to it through `host.docker.internal`. Set `BANK_API_URL` in `docker-compose.yml` if it uses another address.
@@ -17,7 +17,7 @@ Swagger UI is available at <http://localhost:8090/swagger/index.html>. The OpenA
 ## Run locally
 
 ```powershell
-go run ./cmd/payment-gateway
+make run
 ```
 
 The API listens on `:8090` by default. Start PostgreSQL and the bank API before starting the gateway. The application creates the payments table on startup.
@@ -29,6 +29,23 @@ The API listens on `:8090` by default. Start PostgreSQL and the bank API before 
 | `DATABASE_URL` | `postgres://payment:payment@localhost:5432/payment?sslmode=disable` | PostgreSQL connection string |
 
 Swagger UI is available at <http://localhost:8090/swagger/index.html>. The OpenAPI document is served at <http://localhost:8090/openapi.yaml>.
+
+## Development commands
+
+The Makefile provides shortcuts for common tasks. Run `make` or `make help` to list them. GNU Make, Go, and Docker Compose are required for the corresponding targets.
+
+Windows does not include GNU Make by default. If `make` is unavailable, run the underlying commands directly, such as `go test ./...`, `go build ./...`, `go run ./cmd/payment-gateway`, and `docker compose up --build`.
+
+| Command | Action |
+| --- | --- |
+| `make fmt` | Format Go files with `gofmt -w .` |
+| `make test` | Run all Go tests with `go test ./...` |
+| `make test-coverage` | Run all Go tests with coverage summaries |
+| `make build` | Compile all Go packages |
+| `make run` | Start the gateway locally |
+| `make compose-up` | Build and start the gateway and PostgreSQL |
+| `make compose-down` | Stop the Compose services |
+| `make compose-logs` | Follow the Compose logs |
 
 ## Payments API
 
