@@ -6,7 +6,7 @@ help:
 	@echo "Available targets:"
 	@echo "  fmt             Format Go files with gofmt"
 	@echo "  test            Run all Go tests"
-	@echo "  test-coverage   Run all Go tests with coverage summaries"
+	@echo "  test-coverage   Run tests and show per-function and total coverage"
 	@echo "  build           Compile all Go packages"
 	@echo "  run             Run the payment gateway"
 	@echo "  compose-up      Build and start the gateway and PostgreSQL"
@@ -20,7 +20,8 @@ test:
 	go test ./...
 
 test-coverage:
-	go test -cover ./...
+	go test -coverprofile=coverage.out ./...
+	go tool cover -func=coverage.out
 
 build:
 	go build ./...

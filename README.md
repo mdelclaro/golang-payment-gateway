@@ -40,7 +40,7 @@ Windows does not include GNU Make by default. If `make` is unavailable, run the 
 | --- | --- |
 | `make fmt` | Format Go files with `gofmt -w .` |
 | `make test` | Run all Go tests with `go test ./...` |
-| `make test-coverage` | Run all Go tests with coverage summaries |
+| `make test-coverage` | Run all tests and show per-function and total coverage |
 | `make build` | Compile all Go packages |
 | `make run` | Start the gateway locally |
 | `make compose-up` | Build and start the gateway and PostgreSQL |
