@@ -10,11 +10,19 @@ Start the gateway and PostgreSQL:
 make compose-up
 ```
 
-The gateway listens on `http://localhost:8090`, and PostgreSQL data is kept in the `payment_data` volume. The bank API must be running on the host at port `8080`; Compose routes the gateway to it through `host.docker.internal`. Set `BANK_API_URL` in `docker-compose.yml` if it uses another address.
+The gateway listens on `http://localhost:8090`, and PostgreSQL data is kept in the `payment_data` volume. Start the assessment's bank API on the host at port `8080` before creating a payment. Compose routes the gateway to it through `host.docker.internal`. To use a different bank API address, set `BANK_API_URL` in your shell before starting Compose.
 
 Swagger UI is available at <http://localhost:8090/swagger/index.html>. The OpenAPI document is served at <http://localhost:8090/openapi.yaml>.
 
 ## Run locally
+
+Start PostgreSQL in the background:
+
+```powershell
+docker compose up -d postgres
+```
+
+Make sure the assessment's bank API is running at `http://localhost:8080`, then start the gateway:
 
 ```powershell
 make run
