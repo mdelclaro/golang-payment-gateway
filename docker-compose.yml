@@ -10,8 +10,6 @@ services:
       DATABASE_URL: "postgres://payment:payment@postgres:5432/payment?sslmode=disable"
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     ports:
       - "8090:8090"
 
