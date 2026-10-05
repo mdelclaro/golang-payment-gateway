@@ -1,12 +1,13 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help fmt test test-coverage build run compose-up compose-down compose-logs
+.PHONY: help fmt test test-coverage test-e2e build run compose-up compose-down compose-logs
 
 help:
 	@echo "Available targets:"
 	@echo "  fmt             Format Go files with gofmt"
 	@echo "  test            Run all Go tests"
 	@echo "  test-coverage   Run all Go tests with coverage summaries"
+	@echo "  test-e2e        Run end-to-end tests against the running API and bank simulator"
 	@echo "  build           Compile all Go packages"
 	@echo "  run             Run the payment gateway"
 	@echo "  compose-up      Build and start the gateway and PostgreSQL"
@@ -21,6 +22,9 @@ test:
 
 test-coverage:
 	go test -cover ./...
+
+test-e2e:
+	go test -v -tags=e2e ./e2e
 
 build:
 	go build ./...
