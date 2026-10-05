@@ -119,6 +119,50 @@
       "metaSortKey": 2
     },
     {
+      "_id": "req_decline_payment",
+      "_type": "request",
+      "parentId": "fld_payment_flow",
+      "name": "Create declined payment (local simulator)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/v1/payments",
+      "headers": [
+        {"name": "Accept", "value": "application/json"},
+        {"name": "Content-Type", "value": "application/json"}
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"cardNumber\": \"4111111111111112\",\n  \"expiryMonth\": 12,\n  \"expiryYear\": 2035,\n  \"currency\": \"USD\",\n  \"amount\": 2500,\n  \"cvv\": \"123\"\n}"
+      },
+      "scripts": {
+        "afterResponse": "insomnia.test('creates a declined payment', () => { insomnia.expect(insomnia.response.code).to.eql(201); insomnia.expect(insomnia.response.json().status).to.eql('Declined'); });"
+      },
+      "authentication": {},
+      "settings": {"renderRequestBody": true, "encodeUrl": true, "rebuildPath": true, "followRedirects": "global", "cookies": {"send": true, "store": true}},
+      "metaSortKey": 3
+    },
+    {
+      "_id": "req_bank_unavailable",
+      "_type": "request",
+      "parentId": "fld_payment_flow",
+      "name": "Bank unavailable (local simulator)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/v1/payments",
+      "headers": [
+        {"name": "Accept", "value": "application/json"},
+        {"name": "Content-Type", "value": "application/json"}
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"cardNumber\": \"4111111111111110\",\n  \"expiryMonth\": 12,\n  \"expiryYear\": 2035,\n  \"currency\": \"USD\",\n  \"amount\": 2500,\n  \"cvv\": \"123\"\n}"
+      },
+      "scripts": {
+        "afterResponse": "insomnia.test('returns HTTP 503', () => { insomnia.expect(insomnia.response.code).to.eql(503); });\ninsomnia.test('returns an authorization unavailable error', () => { insomnia.expect(insomnia.response.json().error).to.eql('payment authorization is unavailable'); });"
+      },
+      "authentication": {},
+      "settings": {"renderRequestBody": true, "encodeUrl": true, "rebuildPath": true, "followRedirects": "global", "cookies": {"send": true, "store": true}},
+      "metaSortKey": 4
+    },
+    {
       "_id": "req_invalid_payment",
       "_type": "request",
       "parentId": "fld_payment_flow",
@@ -138,7 +182,7 @@
       },
       "authentication": {},
       "settings": {"renderRequestBody": true, "encodeUrl": true, "rebuildPath": true, "followRedirects": "global", "cookies": {"send": true, "store": true}},
-      "metaSortKey": 3
+      "metaSortKey": 5
     },
     {
       "_id": "req_missing_payment",
@@ -154,7 +198,7 @@
       },
       "authentication": {},
       "settings": {"renderRequestBody": true, "encodeUrl": true, "rebuildPath": true, "followRedirects": "global", "cookies": {"send": true, "store": true}},
-      "metaSortKey": 4
+      "metaSortKey": 6
     },
     {
       "_id": "req_invalid_payment_id",
@@ -170,7 +214,7 @@
       },
       "authentication": {},
       "settings": {"renderRequestBody": true, "encodeUrl": true, "rebuildPath": true, "followRedirects": "global", "cookies": {"send": true, "store": true}},
-      "metaSortKey": 5
+      "metaSortKey": 7
     }
   ]
 }

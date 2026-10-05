@@ -4,7 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -18,6 +22,9 @@ import (
 )
 
 func Run() error {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	cfg := config.Load()
 	db, err := sql.Open("pgx", cfg.DatabaseURL)
 	if err != nil {
@@ -25,12 +32,12 @@ func Run() error {
 	}
 	defer db.Close()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	startupCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	if err := db.PingContext(ctx); err != nil {
+	if err := db.PingContext(startupCtx); err != nil {
 		return err
 	}
-	if err := migrations.Migrate(ctx, db); err != nil {
+	if err := migrations.Migrate(startupCtx, db); err != nil {
 		return err
 	}
 
@@ -50,10 +57,34 @@ func Run() error {
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
-	err = server.ListenAndServe()
-	if errors.Is(err, http.ErrServerClosed) {
-		return nil
+	return serve(ctx, server)
+}
+
+func serve(ctx context.Context, server *http.Server) error {
+	serverErr := make(chan error, 1)
+	go func() {
+		serverErr <- server.ListenAndServe()
+	}()
+
+	select {
+	case err := <-serverErr:
+		if errors.Is(err, http.ErrServerClosed) {
+			return nil
+		}
+		return err
+	case <-ctx.Done():
 	}
 
-	return err
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		_ = server.Close()
+		return fmt.Errorf("shut down HTTP server: %w", err)
+	}
+
+	if err := <-serverErr; err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return fmt.Errorf("HTTP server stopped: %w", err)
+	}
+
+	return nil
 }
