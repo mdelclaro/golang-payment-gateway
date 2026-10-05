@@ -16,19 +16,25 @@ Swagger UI is available at <http://localhost:8090/swagger/index.html>. The OpenA
 
 ## Run locally
 
-Start PostgreSQL in the background:
+Start PostgreSQL in the background from the payment gateway repository:
 
 ```powershell
 docker compose up -d postgres
 ```
 
-Make sure the assessment's bank API is running at `http://localhost:8080`, then start the gateway:
+Start the assessment bank simulator from its repository root in a separate terminal:
+
+```powershell
+docker compose up -d bank_simulator
+```
+
+Then start the gateway from the payment gateway repository:
 
 ```powershell
 make run
 ```
 
-The API listens on `:8090` by default. Start PostgreSQL and the bank API before starting the gateway. The application creates the payments table on startup.
+The API listens on `:8090` by default. The application creates the payments table on startup.
 
 | Environment variable | Default | Purpose |
 | --- | --- | --- |

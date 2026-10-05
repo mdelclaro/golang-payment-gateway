@@ -24,7 +24,7 @@ test-coverage:
 	go test -cover ./...
 
 test-e2e:
-	go test -tags=e2e ./e2e
+	go test -v -tags=e2e ./e2e
 
 build:
 	go build ./...
