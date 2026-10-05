@@ -1,0 +1,176 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-10-04T00:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v11.0.0",
+  "resources": [
+    {
+      "_id": "wrk_payment_gateway",
+      "_type": "workspace",
+      "name": "Payment Gateway API",
+      "description": "API checks for creating and retrieving payments.",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_payment_gateway_base",
+      "_type": "environment",
+      "parentId": "wrk_payment_gateway",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:8090",
+        "payment_id": "",
+        "missing_payment_id": "9223372036854775807"
+      },
+      "dataPropertyOrder": {
+        "&": ["base_url", "payment_id", "missing_payment_id"]
+      },
+      "color": null,
+      "isPrivate": false,
+      "metaSortKey": 1
+    },
+    {
+      "_id": "fld_operations",
+      "_type": "request_group",
+      "parentId": "wrk_payment_gateway",
+      "name": "Operations",
+      "description": "Health and API specification checks.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 1
+    },
+    {
+      "_id": "req_health",
+      "_type": "request",
+      "parentId": "fld_operations",
+      "name": "Health check",
+      "method": "GET",
+      "url": "{{ _.base_url }}/health",
+      "headers": [{"name": "Accept", "value": "application/json"}],
+      "body": {},
+      "scripts": {
+        "afterResponse": "insomnia.test('returns HTTP 200', () => { insomnia.expect(insomnia.response.code).to.eql(200); });\ninsomnia.test('reports healthy status', () => { insomnia.expect(insomnia.response.json()).to.eql({ status: 'ok' }); });"
+      },
+      "authentication": {},
+      "settings": {"renderRequestBody": true, "encodeUrl": true, "rebuildPath": true, "followRedirects": "global", "cookies": {"send": true, "store": true}},
+      "metaSortKey": 1
+    },
+    {
+      "_id": "req_openapi",
+      "_type": "request",
+      "parentId": "fld_operations",
+      "name": "OpenAPI specification",
+      "method": "GET",
+      "url": "{{ _.base_url }}/openapi.yaml",
+      "headers": [{"name": "Accept", "value": "application/yaml"}],
+      "body": {},
+      "scripts": {
+        "afterResponse": "insomnia.test('returns HTTP 200', () => { insomnia.expect(insomnia.response.code).to.eql(200); });\ninsomnia.test('contains payment endpoint documentation', () => { insomnia.expect(insomnia.response.text()).to.include('/v1/payments'); });"
+      },
+      "authentication": {},
+      "settings": {"renderRequestBody": true, "encodeUrl": true, "rebuildPath": true, "followRedirects": "global", "cookies": {"send": true, "store": true}},
+      "metaSortKey": 2
+    },
+    {
+      "_id": "fld_payment_flow",
+      "_type": "request_group",
+      "parentId": "wrk_payment_gateway",
+      "name": "Payment Flow",
+      "description": "Run Create payment before Get created payment. The create request saves the returned ID in the active environment.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 2
+    },
+    {
+      "_id": "req_create_payment",
+      "_type": "request",
+      "parentId": "fld_payment_flow",
+      "name": "Create payment",
+      "method": "POST",
+      "url": "{{ _.base_url }}/v1/payments",
+      "headers": [
+        {"name": "Accept", "value": "application/json"},
+        {"name": "Content-Type", "value": "application/json"}
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"cardNumber\": \"4111111111111111\",\n  \"expiryMonth\": 12,\n  \"expiryYear\": 2035,\n  \"currency\": \"USD\",\n  \"amount\": 2500,\n  \"cvv\": \"123\"\n}"
+      },
+      "scripts": {
+        "afterResponse": "insomnia.test('creates the payment', () => { insomnia.expect(insomnia.response.code).to.eql(201); });\nconst payment = insomnia.response.json();\ninsomnia.test('returns payment details', () => { ['id', 'status', 'cardLastFour', 'expiryMonth', 'expiryYear', 'currency', 'amount'].forEach(key => insomnia.expect(payment).to.have.property(key)); insomnia.expect(payment.status).to.be.oneOf(['Authorized', 'Declined']); });\ninsomnia.test('does not expose card number or CVV', () => { insomnia.expect(payment).to.not.have.property('cardNumber'); insomnia.expect(payment).to.not.have.property('cvv'); });\ninsomnia.environment.set('payment_id', String(payment.id));"
+      },
+      "authentication": {},
+      "settings": {"renderRequestBody": true, "encodeUrl": true, "rebuildPath": true, "followRedirects": "global", "cookies": {"send": true, "store": true}},
+      "metaSortKey": 1
+    },
+    {
+      "_id": "req_get_payment",
+      "_type": "request",
+      "parentId": "fld_payment_flow",
+      "name": "Get created payment",
+      "method": "GET",
+      "url": "{{ _.base_url }}/v1/payments/{{ _.payment_id }}",
+      "headers": [{"name": "Accept", "value": "application/json"}],
+      "body": {},
+      "scripts": {
+        "afterResponse": "insomnia.test('returns HTTP 200', () => { insomnia.expect(insomnia.response.code).to.eql(200); });\ninsomnia.test('returns the created payment', () => { const payment = insomnia.response.json(); insomnia.expect(String(payment.id)).to.eql(insomnia.environment.get('payment_id')); insomnia.expect(payment).to.have.property('cardLastFour'); insomnia.expect(payment).to.not.have.property('cardNumber'); insomnia.expect(payment).to.not.have.property('cvv'); });"
+      },
+      "authentication": {},
+      "settings": {"renderRequestBody": true, "encodeUrl": true, "rebuildPath": true, "followRedirects": "global", "cookies": {"send": true, "store": true}},
+      "metaSortKey": 2
+    },
+    {
+      "_id": "req_invalid_payment",
+      "_type": "request",
+      "parentId": "fld_payment_flow",
+      "name": "Reject invalid payment",
+      "method": "POST",
+      "url": "{{ _.base_url }}/v1/payments",
+      "headers": [
+        {"name": "Accept", "value": "application/json"},
+        {"name": "Content-Type", "value": "application/json"}
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"cardNumber\": \"123\",\n  \"expiryMonth\": 12,\n  \"expiryYear\": 2035,\n  \"currency\": \"USD\",\n  \"amount\": 2500,\n  \"cvv\": \"123\"\n}"
+      },
+      "scripts": {
+        "afterResponse": "insomnia.test('returns HTTP 400', () => { insomnia.expect(insomnia.response.code).to.eql(400); });\ninsomnia.test('returns a validation error', () => { insomnia.expect(insomnia.response.json().error).to.eql('invalid payment request'); });"
+      },
+      "authentication": {},
+      "settings": {"renderRequestBody": true, "encodeUrl": true, "rebuildPath": true, "followRedirects": "global", "cookies": {"send": true, "store": true}},
+      "metaSortKey": 3
+    },
+    {
+      "_id": "req_missing_payment",
+      "_type": "request",
+      "parentId": "fld_payment_flow",
+      "name": "Return 404 for missing payment",
+      "method": "GET",
+      "url": "{{ _.base_url }}/v1/payments/{{ _.missing_payment_id }}",
+      "headers": [{"name": "Accept", "value": "application/json"}],
+      "body": {},
+      "scripts": {
+        "afterResponse": "insomnia.test('returns HTTP 404', () => { insomnia.expect(insomnia.response.code).to.eql(404); });\ninsomnia.test('returns a not-found error', () => { insomnia.expect(insomnia.response.json().error).to.eql('payment not found'); });"
+      },
+      "authentication": {},
+      "settings": {"renderRequestBody": true, "encodeUrl": true, "rebuildPath": true, "followRedirects": "global", "cookies": {"send": true, "store": true}},
+      "metaSortKey": 4
+    },
+    {
+      "_id": "req_invalid_payment_id",
+      "_type": "request",
+      "parentId": "fld_payment_flow",
+      "name": "Reject invalid payment ID",
+      "method": "GET",
+      "url": "{{ _.base_url }}/v1/payments/0",
+      "headers": [{"name": "Accept", "value": "application/json"}],
+      "body": {},
+      "scripts": {
+        "afterResponse": "insomnia.test('returns HTTP 400', () => { insomnia.expect(insomnia.response.code).to.eql(400); });\ninsomnia.test('returns an invalid ID error', () => { insomnia.expect(insomnia.response.json().error).to.eql('invalid payment ID'); });"
+      },
+      "authentication": {},
+      "settings": {"renderRequestBody": true, "encodeUrl": true, "rebuildPath": true, "followRedirects": "global", "cookies": {"send": true, "store": true}},
+      "metaSortKey": 5
+    }
+  ]
+}
