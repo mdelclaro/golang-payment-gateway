@@ -10,7 +10,7 @@ Start the gateway and PostgreSQL:
 make compose-up
 ```
 
-The gateway listens on `http://localhost:8090`, and PostgreSQL data is kept in the `payment_data` volume. Start the assessment's bank API on the host at port `8080` before creating a payment. Compose routes the gateway to it through `host.docker.internal`. To use a different bank API address, set `BANK_API_URL` in your shell before starting Compose.
+The gateway listens on `http://localhost:8090`, and PostgreSQL data is kept in the `payment_data` volume. The assessment's bank API is a separate Compose project; from its repository root, run `docker compose up -d bank_simulator` so it listens on the host at port `8080`. The gateway Compose setup routes to it through `host.docker.internal`. To use a different bank API address, set `BANK_API_URL` in your shell before starting Compose.
 
 Swagger UI is available at <http://localhost:8090/swagger/index.html>. The OpenAPI document is served at <http://localhost:8090/openapi.yaml>.
 
@@ -54,6 +54,28 @@ Windows does not include GNU Make by default. If `make` is unavailable, run the 
 | `make compose-up` | Build and start the gateway and PostgreSQL |
 | `make compose-down` | Stop the Compose services |
 | `make compose-logs` | Follow the Compose logs |
+
+## End-to-end tests
+
+The E2E suite sends HTTP requests to a running gateway and uses the real PostgreSQL and assessment bank simulator services. Start the bank simulator from its repository in one terminal:
+
+```powershell
+docker compose up -d bank_simulator
+```
+
+Then start the gateway stack in another terminal:
+
+```powershell
+make compose-up
+```
+
+In a second terminal, run:
+
+```powershell
+make test-e2e
+```
+
+The suite defaults to `http://localhost:8090`; set `PAYMENT_GATEWAY_URL` to target another running gateway. It creates test payment rows in the configured database. The suite covers approval and retrieval, decline persistence, validation errors, bank unavailability, missing IDs, and invalid IDs. These tests are opt-in and are not included in `go test ./...`.
 
 ## Payments API
 
