@@ -4,35 +4,31 @@ Go implementation of the Checkout.com payment gateway assessment.
 
 ## Run with Docker Compose
 
-Start the gateway, PostgreSQL, and a local bank simulator:
+Start the gateway and PostgreSQL:
 
 ```powershell
 make compose-up
 ```
 
-The gateway listens on `http://localhost:8090`, the bank simulator on `http://localhost:8080`, and PostgreSQL data is kept in the `payment_data` volume. No separate bank service is needed for a local run.
-
-The simulator is for local development only. It approves card numbers ending in an odd digit, declines numbers ending in a non-zero even digit, and returns `503 Service Unavailable` for numbers ending in `0`. For example, the sample card below is approved; change its last digit to `2` to test a decline or `0` to test bank unavailability.
-
-To try the API, import [`insomnia/payment-gateway-testing.json`](insomnia/payment-gateway-testing.json) into Insomnia. Run **Create payment** before **Get created payment**; the create request saves the returned payment ID for the lookup.
+The gateway listens on `http://localhost:8090`, and PostgreSQL data is kept in the `payment_data` volume. Start the assessment's bank API on the host at port `8080` before creating a payment. Compose routes the gateway to it through `host.docker.internal`. To use a different bank API address, set `BANK_API_URL` in your shell before starting Compose.
 
 Swagger UI is available at <http://localhost:8090/swagger/index.html>. The OpenAPI document is served at <http://localhost:8090/openapi.yaml>.
 
 ## Run locally
 
-Start PostgreSQL and the local bank simulator in the background:
+Start PostgreSQL in the background:
 
 ```powershell
-docker compose up -d postgres bank
+docker compose up -d postgres
 ```
 
-Then run the gateway in the foreground:
+Make sure the assessment's bank API is running at `http://localhost:8080`, then start the gateway:
 
 ```powershell
 make run
 ```
 
-The API listens on `:8090` by default. The application creates the payments table on startup. Stop the dependencies with `docker compose down` when finished.
+The API listens on `:8090` by default. Start PostgreSQL and the bank API before starting the gateway. The application creates the payments table on startup.
 
 | Environment variable | Default | Purpose |
 | --- | --- | --- |
@@ -69,7 +65,7 @@ The [OpenAPI (Swagger) specification](internal/httpapi/docs/openapi.yaml) docume
 {
   "cardNumber": "4111111111111111",
   "expiryMonth": 12,
-  "expiryYear": 2035,
+  "expiryYear": 2030,
   "currency": "USD",
   "amount": 2500,
   "cvv": "123"

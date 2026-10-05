@@ -10,17 +10,14 @@ info:
     remain in the current version. The operational health check stays at
     `/health` and is not versioned.
 
-    To run the complete local stack, use `docker compose up --build`; this starts
-    PostgreSQL, the gateway, and a deterministic development bank simulator.
-    To run the gateway directly, start PostgreSQL and the bank simulator with
-    `docker compose up -d postgres bank`, then run `go run ./cmd/payment-gateway`.
-    Configure the listener with `HTTP_ADDR` (default `:8090`), the bank endpoint
-    with `BANK_API_URL` (default `http://localhost:8080`), and the database
-    connection with `DATABASE_URL` (default
-    `postgres://payment:payment@localhost:5432/payment?sslmode=disable`).
-    The service creates its payment table on startup. The local bank simulator
-    approves odd-ending card numbers, declines non-zero even-ending numbers,
-    and responds with `503` for card numbers ending in `0`.
+    To run locally, start PostgreSQL and the bank API, then run
+    `go run ./cmd/payment-gateway`. Configure the listener with `HTTP_ADDR`
+    (default `:8090`), the bank endpoint with `BANK_API_URL` (default
+    `http://localhost:8080`), and the database connection with `DATABASE_URL`
+    (default `postgres://payment:payment@localhost:5432/payment?sslmode=disable`).
+    The service creates its payment table on startup. `docker compose up --build`
+    starts the gateway and PostgreSQL; the bank API must still be reachable at
+    the address configured by `BANK_API_URL`.
   contact:
     name: API Support
 servers:
